@@ -2,7 +2,7 @@ use super::{errors::BuilderResult, policy::Policy};
 use crate::{block_template::selector::TransactionsSelector, model::candidate_tx::CandidateTransaction};
 use kaspa_consensus_core::{
     api::ConsensusApi,
-    block::BlockTemplate,
+    block::{BlockTemplate, BuildMode},
     coinbase::MinerData,
     merkle::calc_hash_merkle_root,
     tx::{TransactionId, COINBASE_TRANSACTION_INDEX},
@@ -92,11 +92,12 @@ impl BlockTemplateBuilder {
         &mut self,
         consensus: &dyn ConsensusApi,
         miner_data: &MinerData,
+        mode: BuildMode,
     ) -> BuilderResult<BlockTemplate> {
         let _sw = Stopwatch::<20>::with_threshold("build_block_template op");
         debug!("Considering {} transactions for a new block template", self.selector.len());
         let block_txs = self.selector.select_transactions();
-        Ok(consensus.build_block_template(miner_data.clone(), block_txs)?)
+        Ok(consensus.build_block_template(miner_data.clone(), block_txs, mode)?)
     }
 
     pub(crate) fn update_transactions(&mut self, transactions: Vec<CandidateTransaction>) {

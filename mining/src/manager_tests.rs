@@ -16,6 +16,7 @@ mod tests {
     use kaspa_addresses::{Address, Prefix, Version};
     use kaspa_consensus_core::{
         api::ConsensusApi,
+        block::BuildMode,
         coinbase::MinerData,
         constants::{MAX_TX_IN_SEQUENCE_NUM, SOMPI_PER_KASPA, TX_VERSION},
         errors::tx::{TxResult, TxRuleError},
@@ -847,7 +848,7 @@ mod tests {
 
         // Build a fresh template for coinbase2 as a reference
         let mut builder = mining_manager.block_template_builder(transactions);
-        let result = builder.build_block_template(consensus, &miner_data_2);
+        let result = builder.build_block_template(consensus, &miner_data_2, BuildMode::Standard);
         assert!(result.is_ok(), "build block template failed for miner data 2");
         let expected_template = result.unwrap();
 

@@ -85,3 +85,15 @@ impl BlockTemplate {
         Self { block, miner_data, coinbase_has_red_reward, selected_parent_timestamp, selected_parent_daa_score }
     }
 }
+
+/// Block template build mode
+#[derive(Clone, Copy, Debug)]
+pub enum BuildMode {
+    /// Block template build succeeds only if all the transactions are successfully validated.
+    ///
+    /// When invalid transactions are found, the build fails with `BlockRuleError::InvalidTransactionsInNewBlock`.
+    Standard,
+
+    /// Block template build always succeeds. The built block contains only the validated transactions.
+    Infallible,
+}

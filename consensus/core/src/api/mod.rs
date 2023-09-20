@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::{
     acceptance_data::AcceptanceData,
-    block::{Block, BlockTemplate},
+    block::{Block, BlockTemplate, BuildMode},
     block_count::BlockCount,
     blockstatus::BlockStatus,
     coinbase::MinerData,
@@ -27,7 +27,7 @@ pub type BlockValidationFuture = BoxFuture<'static, BlockProcessResult<BlockStat
 /// Abstracts the consensus external API
 #[allow(unused_variables)]
 pub trait ConsensusApi: Send + Sync {
-    fn build_block_template(&self, miner_data: MinerData, txs: Vec<Transaction>) -> Result<BlockTemplate, RuleError> {
+    fn build_block_template(&self, miner_data: MinerData, txs: Vec<Transaction>, mode: BuildMode) -> Result<BlockTemplate, RuleError> {
         unimplemented!()
     }
 

@@ -48,7 +48,7 @@ use crate::{
 };
 use kaspa_consensus_core::{
     acceptance_data::AcceptanceData,
-    block::{BlockTemplate, MutableBlock},
+    block::{BlockTemplate, BuildMode, MutableBlock},
     blockstatus::BlockStatus::{StatusDisqualifiedFromChain, StatusUTXOValid},
     coinbase::MinerData,
     config::genesis::GenesisBlock,
@@ -787,14 +787,28 @@ impl VirtualStateProcessor {
         Ok(())
     }
 
-    pub fn build_block_template(&self, miner_data: MinerData, txs: Vec<Transaction>) -> Result<BlockTemplate, RuleError> {
+    pub fn build_block_template(
+        &self,
+        miner_data: MinerData,
+        mut txs: Vec<Transaction>,
+        mode: BuildMode,
+    ) -> Result<BlockTemplate, RuleError> {
         // TODO: tests
         let virtual_read = self.virtual_stores.read();
         let virtual_state = virtual_read.state.get().unwrap();
         let virtual_utxo_view = &virtual_read.utxo_set;
 
-        // Validate the transactions in virtual's utxo context
-        self.validate_block_template_transactions(&txs, &virtual_state, virtual_utxo_view)?;
+        match mode {
+            BuildMode::Standard => {
+                // Validate the transactions in virtual's utxo context
+                self.validate_block_template_transactions(&txs, &virtual_state, virtual_utxo_view)?;
+            }
+
+            BuildMode::Infallible => {
+                // Discard invalid transactions in virtual's utxo context
+                txs = self.get_valid_block_template_transactions(txs, &virtual_state, virtual_utxo_view);
+            }
+        }
 
         // At this point we can safely drop the read lock
         drop(virtual_read);
@@ -822,6 +836,15 @@ impl VirtualStateProcessor {
         } else {
             Ok(())
         }
+    }
+
+    fn get_valid_block_template_transactions(
+        &self,
+        txs: Vec<Transaction>,
+        virtual_state: &VirtualState,
+        utxo_view: &impl UtxoView,
+    ) -> Vec<Transaction> {
+        txs.into_iter().filter(|tx| self.validate_block_template_transaction(tx, virtual_state, utxo_view).is_ok()).collect_vec()
     }
 
     pub(crate) fn build_block_template_from_virtual_state(

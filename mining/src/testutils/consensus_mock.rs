@@ -1,7 +1,7 @@
 use super::coinbase_mock::CoinbaseManagerMock;
 use kaspa_consensus_core::{
     api::ConsensusApi,
-    block::{BlockTemplate, MutableBlock},
+    block::{BlockTemplate, BuildMode, MutableBlock},
     coinbase::MinerData,
     constants::BLOCK_VERSION,
     errors::{
@@ -72,7 +72,12 @@ impl ConsensusMock {
 }
 
 impl ConsensusApi for ConsensusMock {
-    fn build_block_template(&self, miner_data: MinerData, mut txs: Vec<Transaction>) -> Result<BlockTemplate, RuleError> {
+    fn build_block_template(
+        &self,
+        miner_data: MinerData,
+        mut txs: Vec<Transaction>,
+        _: BuildMode,
+    ) -> Result<BlockTemplate, RuleError> {
         let coinbase_manager = CoinbaseManagerMock::new();
         let coinbase = coinbase_manager.expected_coinbase_transaction(miner_data.clone());
         txs.insert(0, coinbase.tx);
