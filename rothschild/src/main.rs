@@ -116,17 +116,17 @@ pub fn cli() -> Command {
                 .long("rpcserver")
                 .short('s')
                 .value_name("rpcserver")
-                .help("RPC server (defaults: testnet=16210, devnet=16610"),
+                .help("RPC server (defaults: testnet=16210, devnet=16610)"),
         )
         .arg(
             Arg::new("threads")
                 .long("threads")
                 .default_value("2")
                 .value_parser(clap::value_parser!(u8))
-                .help("The number of threads to use for TX generation. Set to 0 to use 1 thread per core. Default is 2."),
+                .help("The number of threads to use for TX generation. Set to 0 to use 1 thread per core."),
         )
         .arg(Arg::new("unleashed").long("unleashed").action(ArgAction::SetTrue).hide(true).help("Allow higher TPS"))
-        .arg(Arg::new("addr").long("to-addr").short('a').value_name("addr").help("address to send to"))
+        .arg(Arg::new("addr").long("to-addr").short('a').value_name("addr").help("Address to send to"))
         .arg(
             Arg::new("priority-fee")
                 .long("priority-fee")
@@ -177,7 +177,7 @@ pub fn cli() -> Command {
                 .long("max-utxos")
                 .default_value("1000000")
                 .value_parser(clap::value_parser!(u64))
-                .help("The maximum number of UTXOS in the private key wallet, beyond which rothschild will start to maximize inputs in transactions. Default is 1000000."),
+                .help("Maximum number of UTXOs beyond which inputs get maximized in transactions"),
         )
 }
 
