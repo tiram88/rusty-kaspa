@@ -60,6 +60,7 @@ pub struct Args {
     pub enable_covenant_id: bool,
     pub randomize_tx_version: bool,
     pub network: NetworkType,
+    pub max_utxos: u64,
 }
 
 impl Args {
@@ -82,6 +83,7 @@ impl Args {
             payload_size: m.get_one::<usize>("payload-size").cloned().unwrap_or(0),
             enable_covenant_id: m.get_one::<bool>("enable-covenant-id").cloned().unwrap_or_default(),
             randomize_tx_version: m.get_one::<bool>("randomize-tx-version").cloned().unwrap_or_default(),
+            max_utxos: m.get_one::<u64>("max-utxos").cloned().unwrap(),
         }
     }
 }
@@ -169,6 +171,13 @@ pub fn cli() -> Command {
                 .action(ArgAction::SetTrue)
                 .default_value("false")
                 .help("Randomize transaction version between 0 and 1"),
+        )
+        .arg(
+            Arg::new("max-utxos")
+                .long("max-utxos")
+                .default_value("1000000")
+                .value_parser(clap::value_parser!(u64))
+                .help("The maximum number of UTXOS in the private key wallet, beyond which rothschild will start to maximize inputs in transactions. Default is 1000000."),
         )
 }
 
@@ -285,6 +294,7 @@ async fn main() {
     if args.payload_size != 0 {
         log_message.push_str(&format!("\n\tpayload size: {} random bytes", tx_config.payload_size,));
     }
+    log_message.push_str(&format!("\n\tmaximum utxos: {}", args.max_utxos,));
     info!("{}", log_message);
 
     let info = rpc_client.get_block_dag_info().await.expect("Failed to get block dag info.");
@@ -371,7 +381,7 @@ async fn main() {
 
     loop {
         ticker.tick().await;
-        maximize_inputs = should_maximize_inputs(maximize_inputs, &utxos, &pending);
+        maximize_inputs = should_maximize_inputs(maximize_inputs, args.max_utxos, &utxos, &pending);
         let txs_to_send = if remaining_txs_in_interval > avg_txs_per_tick * 2 {
             remaining_txs_in_interval -= avg_txs_per_tick;
             avg_txs_per_tick
@@ -412,14 +422,15 @@ async fn main() {
 
 fn should_maximize_inputs(
     old_value: bool,
+    max_utxos: u64,
     utxos: &[(TransactionOutpoint, UtxoEntry)],
     pending: &HashMap<TransactionOutpoint, Instant>,
 ) -> bool {
-    let estimated_utxos = if utxos.len() > pending.len() { utxos.len() - pending.len() } else { 0 };
-    if !old_value && estimated_utxos > 1_000_000 {
+    let estimated_utxos = if utxos.len() > pending.len() { utxos.len() - pending.len() } else { 0 } as u64;
+    if !old_value && estimated_utxos > max_utxos {
         info!("Starting to maximize inputs");
         true
-    } else if old_value && estimated_utxos < 500_000 {
+    } else if old_value && estimated_utxos < max_utxos / 2 {
         info!("Stopping to maximize inputs");
         false
     } else {
